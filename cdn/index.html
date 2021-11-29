@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./Assets/css/tailwindCSS.css">
+    <link rel="stylesheet" href="./Assets/css/loadingStyle.css">
+    <style>
+
+    </style>
+    <title>Search </title>
+</head>
+<body class="h-screen  overflow-visible" id="pops">
+    <div class="flex justify-center sm-auto overflow-auto " id="app">
+        <div class="shadow-lg rounded-md w-2/3 m-12">
+          <loading-bar :is-loading="isLoading"></loading-bar>
+          <div class="m-3">
+            <div class="flex justify-center items-center">
+                <h2 class="text-gray-500 text-2xl">Search Subtitle Youtube</h2>
+            </div>
+            <div class="flex flex-col m-2">
+                <the-search-form v-model:value="keyword"></the-search-form>
+                <div class="m-1">
+                  <app-button text="Clear" @click="clear"></app-button>
+                </div>
+            </div>
+            <div class="m-3" v-if="$store.state.pagination['total'] > 0">
+              <app-button class="mr-1" :is-disabled="!$store.state.pagination['first']" text="First" @click="navigate('first')"></app-button>
+              <app-button class="mr-1" :is-disabled="!$store.state.pagination['prev']" text="Prev" @click="navigate('prev')"></app-button>
+              <app-button class="mr-1" :is-disabled="!$store.state.pagination['next']" text="Next" @click="navigate('next')"></app-button>
+              <app-button class="mr-1" :is-disabled="!$store.state.pagination['last']" text="Last" @click="navigate('last')"></app-button>
+            </div>
+            <router-view></router-view>
+            <app-dialog></app-dialog>
+          </div>
+        </div>
+    </div>
+<script src="./Assets/js/vue3.js"></script>
+<script src="./Assets/js/vueRouter4.js"></script>
+<script src="./Assets/js/vuex4.js"></script>
+<script src="./utils/pDbounce.js"></script>
+
+<script type="text/x-template" id="the-search-form">
+    <input type="text" class="rounded-md py-2 px-2 border-2 border-green-100 transition focus:border-green-300 focus:outline-none w-full text-gray-500 m-1" placeholder="Keywords"
+    :value="value"
+    @input="onInput">
+    <p class="text-red-600 text-sm ml-1" :class="isLessThanExpected ? 'block' : 'hidden'"> must be longer than 3 characters</p>
+</script>
+<script>
+    window.theSearchForm = {
+      template: '#the-search-form',
+      props: {
+        value: {
+          type: String,
+          default: ''
+        }
+      },
+      computed: {
+        isLessThanExpected() {
+          return this.value.length < 3 && this.value.length > 0
+        }
+      },
+      methods: {
+        onInput(event) {
+          this.$emit('update:value', event.target.value)
+        }
+      }
+    }
+</script>
+<script type="text/x-template" id="app-button">
+    <button class="rounded-md py-1 px-2 bg-green-400 text-white"
+     :disabled="isDisable"
+     @click="onClick">{{text}}</button>
+</script>
+<script>
+    window.appButton = {
+        template :'#app-button',
+        props:{
+            text:{
+                type:String,
+                default:''
+            },
+            isDisable:{
+                type:Boolean,
+                default:false
+            }
+        },
+        methods: {
+            onCilck(event){
+                this.$emit('click',event)
+            }
+        },
+    }
+</script>
+
+<script type="text/x-template" id="app-search-result-item">
+  <div class="shadow-md rounded-md m-1 p-4 flex flex-col">
+    <span v-html="resultText" class="text-xl text-gray-500 mb-3"></span>
+    <app-button
+    :text="buttonText"
+    @click="onPlay"
+  ></app-button>
+  </div>
+</script>
+<script>
+  window.AppSearchResultItem = {
+    template: '#app-search-result-item',
+    props: {
+      resultStart: {
+        type: Number,
+        default: 0
+      },
+      resultText: {
+        type: String,
+        default: ''
+      }
+    },
+    computed: {
+      buttonText() {
+        var date = new Date(0);
+        date.setSeconds(this.resultStart);
+        var timeString = date.toISOString().substr(11, 8);
+        return `Play video at ${timeString}`
+      }
+    },
+    methods: {
+      onPlay() {
+        this.$store.commit('SET_CURRENT_RESULT_START', {
+          currentResultStart: this.resultStart
+        })
+        console.log('sdf');
+      }
+    }
+  }
+</script>
+
+<script type="text/x-template" id="app-search-result">
+  <div>
+
+    <app-search-result-item
+      v-for="(result, i) in $store.state.resultList" :key="i"
+      :result-text="result.text"
+      :result-start="result.start"
+    ></app-search-result-item>
+  </div>
+</script>
+<script>
+  window.AppSearchResult = {
+    template: '#app-search-result',
+    components: {
+      AppSearchResultItem: window.AppSearchResultItem
+    }
+  }
+</script>
+
+<script type="text/x-template" id="search-result-page">
+  <main>
+    <div class="m-5">{{ $store.state.pagination.total }} search results found. Currently on page {{ $store.state.pagination.page }}</div>
+    <app-search-result></app-search-result>
+  </main>
+</script>
+<script>
+  window.SearchResultPage = {
+    template: '#search-result-page',
+    components: {
+      AppSearchResult: window.AppSearchResult
+    },
+    async created() {
+      if (this.$store.state.resultList.length === 0) {
+        await this.$router.replace('/')
+      }
+    },
+  }
+</script>
+
+<script type="text/x-template" id="loading-bar">
+  <div class="progress" :class="isLoading ? 'opacity-100' : 'opacity-0'"></div>
+</script>
+<script>
+  window.loadingBar = {
+    template: '#loading-bar',
+    props: {
+      isLoading: {
+        type: Boolean,
+        default: false
+      }
+    }
+  }
+</script>
+
+
+
+<script>
+    window.router = VueRouter.createRouter({
+      history:VueRouter.createWebHashHistory(),
+      routes:[
+        { 
+          name: 'SearchResultPage',
+          path: '/result/:page',
+          component: window.SearchResultPage 
+        }
+      ]
+    })
+</script>
+<script type="text/x-template" id="app-dialog">
+
+    <Portal target="pops" v-if="$store.state.currentResultStart && embedUrl">
+      <div class="popup">
+  
+        <div class="flex items-center justify-center fixed left-0 bottom-0 w-full h-full bg-black bg-opacity-50">
+          <div class="bg-white rounded-lg w-1/2 p-3">
+            <div class="embed relative block h-0 p-0 overflow-hidden">
+              <iframe
+                :src="embedUrl"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                class="absolute top-0 left-0 bottom-0 h-full w-full"
+              ></iframe>
+            </div>
+            <app-button
+              text="Close"
+              class="mt-3"
+              @click="closeDialog"
+            ></app-button>
+          </div>
+        </div>
+      </div>
+   </Portal>
+</script>
+
+<script>
+  window.AppDialog = {
+    template: '#app-dialog',
+    computed: {
+      youtubeId() {
+        // RegEx taken from: https://stackoverflow.com/a/6904504
+        return /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/gi.exec(
+          this.$store.state.url || ''
+        )
+      },
+      embedUrl() {
+        return `https://www.youtube.com/embed/${this.youtubeId[1]}?autoplay=1&start=${this.$store.state.currentResultStart}`
+      }
+    },
+    methods: {
+      closeDialog() {
+        this.$store.commit('SET_CURRENT_RESULT_START', { 
+          currentResultStart: undefined
+         })
+      }
+    }
+  }
+</script>
+
+<script>
+
+    window.store = new Vuex.Store({
+        state(){
+            return{
+                url: 'https://www.youtube.com/watch?v=klnvttPfOUM',
+                resultList: [],
+                pagination: {
+                    first: undefined,
+                    last: undefined,
+                    prev: undefined,
+                    next: undefined,
+                    total: 0,
+                    page: 0
+                },
+                currentResultStart: undefined
+            }
+        },
+        mutations: {
+        SET_URL(state, { url }) {
+          state.url = url
+        },
+        SET_RESULT_LIST(state, { resultList }) {
+          state.resultList = resultList
+        },
+        SET_PAGINATION(state, pagination) {
+          state.pagination = pagination
+        },
+        RESET_PAGINATION(state) {
+          state.pagination = {
+            first: undefined,
+            last: undefined,
+            prev: undefined,
+            next: undefined,
+            total: 0,
+            page: 0
+          }
+        },
+        SET_CURRENT_RESULT_START(state, { currentResultStart }) {
+          state.currentResultStart = currentResultStart
+        }
+      }
+    })
+
+    const app = Vue.createApp({
+        mounted() {
+        },
+        data() {
+            return {
+                isLoading: false,
+                keyword: ''
+            }
+        },
+        computed: {
+          url: {
+            get() {
+              return this.$store.state.url
+            },
+            set(url) {
+              this.$store.commit('SET_URL', { url })
+            }
+          }
+        },
+        watch: {
+            keyword: pDebounce(async function keywordHandler(keyword) {
+                if (keyword && keyword.length >= 3) {
+                    await this.search(keyword, this.url)
+                } else {
+                    this.resetData()
+                }
+        }, 250)
+      },
+      methods: {
+        async search(keyword, url, pagination) {
+          try {
+            this.isLoading = true
+            const response = await fetch(
+              pagination
+                ? pagination
+                : `https://cari-teks-video-api.vercel.app/api/search?&q=${keyword}&url=${encodeURIComponent(
+                  url
+                )}`
+            ).then( _ => (_.ok ? _.json() : []))
+
+            this.$store.commit('SET_RESULT_LIST', { resultList: response.data })
+            this.$store.commit('SET_PAGINATION', {
+              first: response.first,
+              last: response.last,
+              prev: response.prev,
+              next: response.next,
+              total: response.total,
+              page: response.page
+            })
+            await this.$router.push({ name: 'SearchResultPage', params: { page: response.page } })
+
+          } catch (error) {
+          } finally {
+            setTimeout(() => {
+              this.isLoading = false
+            }, 1000)
+          }
+        },
+        async navigate(type) {
+          if (!this.$store.state.pagination[type]) {
+            return
+          }
+          await this.search(this.keyword, this.url, this.$store.state.pagination[type])
+        },
+        async clear() {
+          this.keyword = ''
+          this.resetData()
+          await this.$router.replace('/')
+        },
+        resetData() {
+          this.$store.commit('SET_RESULT_LIST', { resultList: [] })
+          this.$store.commit('RESET_PAGINATION')
+        }
+      },
+      
+    })
+
+    app.use(window.store)
+    app.use(window.router)
+
+    app.component('theSearchForm',window.theSearchForm)
+    app.component('appButton', window.appButton)
+    app.component('loadingBar', window.loadingBar)
+    app.component('AppDialog',window.AppDialog)
+
+    app.mount('#app')
+
+</script>
+</body>
+</html>
