@@ -1,18 +1,19 @@
 <template>
     <div>
-    <Portal target="pops" v-if="$store.state.currentResultStart && embedUrl">
+    <Portal target="body_id" v-if="$store.state.currentResultStart && embedUrl">
       <div class="popup">
   
         <div class="flex items-center justify-center fixed left-0 bottom-0 w-full h-full bg-black bg-opacity-50">
           <div class="bg-white rounded-lg w-1/2 p-3">
-            <div class="embed relative block h-0 p-0 overflow-hidden">
-              <iframe
-                :src="embedUrl"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                class="absolute top-0 left-0 bottom-0 h-full w-full"
-              ></iframe>
+            <div class="embed relative block p-0 overflow-hidden">
+                  <iframe 
+                  class="top-0 left-0 bottom-0 w-full h-full"
+                  :src="embedUrl"
+                  frameborder="0"
+                  allow="accelerometer; autoplay;encrypted-media;"
+                  allowfullscreen
+                  data-cookieconsent="marketing"
+                  ></iframe>
             </div>
             <app-button
               text="Close"
@@ -26,7 +27,11 @@
     </div>
 </template>
 <script>
+import appButton from './appButton.vue'
 export default {
+    components:{
+      'appButton':appButton
+    },
     computed: {
       youtubeId() {
         // RegEx taken from: https://stackoverflow.com/a/6904504
@@ -35,7 +40,7 @@ export default {
         )
       },
       embedUrl() {
-        return `https://www.youtube.com/embed/${this.youtubeId[1]}?autoplay=1&start=${this.$store.state.currentResultStart}`
+        return `https://www.youtube-nocookie.com/embed/${this.youtubeId[1]}?autoplay=1&start=${this.$store.state.currentResultStart}`
       }
     },
     methods: {

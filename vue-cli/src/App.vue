@@ -9,10 +9,18 @@
             </div>
             <div class="flex flex-col m-2">
               <search-form v-model:value="keyword" />
-              <div class="m-1">
+              <div class="p-1">
                 <app-button text="Clear" @click="clear"></app-button>
               </div>
+              <br>
+                <div class="m-1 flex flex-row" v-if="$store.state.pagination['total'] > 0">
+                  <app-button class="mr-1" :is-disabled="!$store.state.pagination['first']" text="First" @click="navigate('first')"></app-button>
+                  <app-button class="mr-1" :is-disabled="!$store.state.pagination['prev']" text="Prev" @click="navigate('prev')"></app-button>
+                  <app-button class="mr-1" :is-disabled="!$store.state.pagination['next']" text="Next" @click="navigate('next')"></app-button>
+                  <app-button class="mr-1" :is-disabled="!$store.state.pagination['last']" text="Last" @click="navigate('last')"></app-button>
+                </div>
               <router-view></router-view>
+              <app-dialog></app-dialog>
             </div> 
           </div>
         </div>
@@ -23,12 +31,13 @@ import searchForm from './components/searchForm.vue'
 import appButton from './components/appButton.vue'
 import pDebounce from './utils/pDbounce'
 import loadingBar from './components/loadingBar.vue'
-
+import appDialog from './components/appDialog.vue'
 export default {
   components:{
     'searchForm': searchForm,
     'appButton': appButton,
-    'loadingBar':loadingBar
+    'loadingBar':loadingBar,
+    'appDialog':appDialog
   },
   data(){
     return{

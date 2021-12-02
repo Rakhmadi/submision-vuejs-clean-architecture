@@ -1,9 +1,7 @@
 <template>
-    <div>
     <button class="rounded-md py-1 px-2 bg-green-400 text-white"
      :disabled="isDisable"
      @click="onClick">{{text}}</button>
-    </div>
 </template>
 <script>
 export default {

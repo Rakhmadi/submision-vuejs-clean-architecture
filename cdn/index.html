@@ -161,7 +161,7 @@
   </main>
 </script>
 <script>
-  window.SearchResultPage = {
+  window.searchResultPage = {
     template: '#search-result-page',
     components: {
       AppSearchResult: window.AppSearchResult
@@ -196,9 +196,9 @@
       history:VueRouter.createWebHashHistory(),
       routes:[
         { 
-          name: 'SearchResultPage',
+          name: 'searchResultPage',
           path: '/result/:page',
-          component: window.SearchResultPage 
+          component: window.searchResultPage 
         }
       ]
     })
@@ -346,7 +346,7 @@
               total: response.total,
               page: response.page
             })
-            await this.$router.push({ name: 'SearchResultPage', params: { page: response.page } })
+            await this.$router.push({ name: 'searchResultPage', params: { page: response.page } })
 
           } catch (error) {
           } finally {
